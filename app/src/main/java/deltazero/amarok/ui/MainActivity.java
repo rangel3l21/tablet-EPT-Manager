@@ -108,6 +108,11 @@ public class MainActivity extends AmarokActivity {
 
     public void setHideApps(View view) {
 
+        if (PrefMgr.getSupabaseToken() == null) {
+            Toast.makeText(this, "Você precisa estar logado para configurar apps.", Toast.LENGTH_LONG).show();
+            return;
+        }
+
         if (Hider.getState() == Hider.State.HIDDEN) {
             Toast.makeText(this, R.string.setting_not_ava_when_hidden, Toast.LENGTH_SHORT).show();
             return;

@@ -159,6 +159,10 @@ public class PrivacyCategory extends BaseCategory {
         firewallPref.setSummary("Bloquear acesso a sites específicos, jogos e conteúdo adulto.");
         firewallPref.setIcon(R.drawable.ic_paw);
         firewallPref.setOnPreferenceClickListener(preference -> {
+            if (PrefMgr.getSupabaseToken() == null) {
+                Toast.makeText(activity, "Você precisa estar logado para usar esta função.", Toast.LENGTH_LONG).show();
+                return true;
+            }
             activity.startActivity(new Intent(activity, FirewallActivity.class));
             return true;
         });

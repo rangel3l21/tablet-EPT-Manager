@@ -1,87 +1,235 @@
 package deltazero.amarok.network;
 
-import android.app.Service;
-import android.app.admin.DevicePolicyManager;
-import android.content.ComponentName;
-import android.content.Context;
 import android.content.Intent;
-import android.os.Build;
-import android.os.IBinder;
+import android.net.VpnService;
+import android.os.ParcelFileDescriptor;
 import android.util.Log;
 
-import deltazero.amarok.PrefMgr;
-import deltazero.amarok.R;
-import deltazero.amarok.receivers.AdminReceiver;
+import org.xbill.DNS.Flags;
+import org.xbill.DNS.Message;
+import org.xbill.DNS.Rcode;
+import org.xbill.DNS.Resolver;
+import org.xbill.DNS.Section;
+import org.xbill.DNS.SimpleResolver;
 
-/**
- * FirewallVpnService — uses ONLY Device Owner Private DNS API.
- * No VPN tunnel is needed. The Device Owner API forces ALL apps
- * (including Chrome with DoH) to use the specified DoT server,
- * which is enforced at the system level and cannot be bypassed by apps.
- *
- * Cloudflare Family (family.cloudflare-dns.com / 1.1.1.3) blocks:
- *   - Pornography
- *   - Malware / Phishing
- *   - Safe Search enforcement on Google/Bing/YouTube
- */
-public class FirewallVpnService extends Service {
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import deltazero.amarok.PrefMgr;
+
+public class FirewallVpnService extends VpnService implements Runnable {
 
     private static final String TAG = "FirewallVpnService";
     public static final String ACTION_START = "deltazero.amarok.network.START_FIREWALL";
     public static final String ACTION_STOP  = "deltazero.amarok.network.STOP_FIREWALL";
 
-    // Popular DoT hostname for Cloudflare Family (blocks adult content)
-    private static final String DNS_FAMILY = "family.cloudflare-dns.com";
+    private Thread vpnThread;
+    private ParcelFileDescriptor vpnInterface;
+    private FileOutputStream out;
+    private ExecutorService resolverPool;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent == null) return START_NOT_STICKY;
 
         if (ACTION_START.equals(intent.getAction())) {
-            applyFirewallDns(DNS_FAMILY);
-            Log.i(TAG, "Firewall ON → Private DNS = " + DNS_FAMILY);
+            if (vpnThread == null || !vpnThread.isAlive()) {
+                resolverPool = Executors.newFixedThreadPool(10);
+                vpnThread = new Thread(this, "FirewallVpnThread");
+                vpnThread.start();
+                Log.i(TAG, "Firewall VPN Started");
+            }
         } else if (ACTION_STOP.equals(intent.getAction())) {
-            applyFirewallDns(null);
-            Log.i(TAG, "Firewall OFF → Private DNS = automatic");
+            stopVpn();
+            Log.i(TAG, "Firewall VPN Stopped");
+            stopSelf();
         }
 
-        stopSelf();
-        return START_NOT_STICKY;
+        return START_STICKY;
     }
 
-    /**
-     * Sets or clears the system Private DNS using the Device Owner API.
-     *
-     * @param hostname DoT hostname to use, or null to revert to automatic.
-     */
-    private void applyFirewallDns(String hostname) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
-            Log.w(TAG, "Private DNS via Device Owner requires Android 9+");
-            return;
+    private void stopVpn() {
+        if (vpnThread != null) {
+            vpnThread.interrupt();
+            vpnThread = null;
+        }
+        if (resolverPool != null) {
+            resolverPool.shutdownNow();
+            resolverPool = null;
         }
         try {
-            DevicePolicyManager dpm =
-                    (DevicePolicyManager) getSystemService(Context.DEVICE_POLICY_SERVICE);
-            ComponentName admin = new ComponentName(this, AdminReceiver.class);
-
-            if (!dpm.isDeviceOwnerApp(getPackageName())) {
-                Log.w(TAG, "PJT is NOT Device Owner. Run: adb shell dpm set-device-owner "
-                        + getPackageName() + "/.receivers.AdminReceiver");
-                return;
-            }
-
-            if (hostname != null) {
-                dpm.setGlobalSetting(admin, "private_dns_mode", "hostname");
-                dpm.setGlobalSetting(admin, "private_dns_specifier", hostname);
-            } else {
-                dpm.setGlobalSetting(admin, "private_dns_mode", "opportunistic");
-                dpm.setGlobalSetting(admin, "private_dns_specifier", "");
+            if (vpnInterface != null) {
+                vpnInterface.close();
+                vpnInterface = null;
             }
         } catch (Exception e) {
-            Log.e(TAG, "applyFirewallDns error", e);
+            Log.e(TAG, "Error closing VPN interface", e);
         }
     }
 
     @Override
-    public IBinder onBind(Intent intent) { return null; }
+    public void onDestroy() {
+        super.onDestroy();
+        stopVpn();
+    }
+
+    @Override
+    public void run() {
+        try {
+            Builder builder = new Builder();
+            builder.addAddress("10.0.0.2", 32);
+            builder.addDnsServer("10.0.0.3");
+            builder.addRoute("10.0.0.3", 32);
+            builder.setSession("Amarok Firewall");
+            builder.setBlocking(true);
+            
+            vpnInterface = builder.establish();
+            if (vpnInterface == null) {
+                Log.e(TAG, "Failed to establish VPN interface");
+                return;
+            }
+
+            FileInputStream in = new FileInputStream(vpnInterface.getFileDescriptor());
+            out = new FileOutputStream(vpnInterface.getFileDescriptor());
+
+            byte[] packet = new byte[32767];
+
+            while (!Thread.currentThread().isInterrupted()) {
+                int length = in.read(packet);
+                if (length > 0) {
+                    byte[] copy = new byte[length];
+                    System.arraycopy(packet, 0, copy, 0, length);
+                    processPacket(copy);
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "VPN Thread Error", e);
+        } finally {
+            stopVpn();
+        }
+    }
+
+    private void processPacket(byte[] packet) {
+        if (packet.length < 28) return; // Min IP + UDP header
+
+        int version = (packet[0] & 0xFF) >> 4;
+        if (version != 4) return; // Only IPv4
+
+        int ihl = (packet[0] & 0x0F) * 4;
+        if (ihl < 20 || packet.length < ihl + 8) return;
+
+        int protocol = packet[9] & 0xFF;
+        if (protocol != 17) return; // Only UDP
+
+        byte[] srcIp = new byte[4];
+        System.arraycopy(packet, 12, srcIp, 0, 4);
+        byte[] dstIp = new byte[4];
+        System.arraycopy(packet, 16, dstIp, 0, 4);
+
+        int srcPort = ((packet[ihl] & 0xFF) << 8) | (packet[ihl + 1] & 0xFF);
+        int dstPort = ((packet[ihl + 2] & 0xFF) << 8) | (packet[ihl + 3] & 0xFF);
+
+        if (dstPort != 53) return; // Only DNS queries
+
+        int dnsLength = packet.length - ihl - 8;
+        if (dnsLength <= 0) return;
+
+        byte[] dnsData = new byte[dnsLength];
+        System.arraycopy(packet, ihl + 8, dnsData, 0, dnsLength);
+
+        resolverPool.execute(() -> {
+            try {
+                Message request = new Message(dnsData);
+                if (request.getQuestion() == null) return;
+                
+                String domain = request.getQuestion().getName().toString(true).toLowerCase(); // without trailing dot
+
+                Set<String> blockedUrls = PrefMgr.getBlockedUrls();
+                boolean isBlocked = false;
+                for (String blocked : blockedUrls) {
+                    if (domain.equals(blocked) || domain.endsWith("." + blocked)) {
+                        isBlocked = true;
+                        break;
+                    }
+                }
+
+                byte[] responsePayload;
+
+                if (isBlocked) {
+                    Log.d(TAG, "Blocked DNS query for: " + domain);
+                    Message response = new Message(request.getHeader().getID());
+                    response.getHeader().setFlag(Flags.QR);
+                    response.getHeader().setFlag(Flags.RA);
+                    response.getHeader().setRcode(Rcode.NXDOMAIN);
+                    response.addRecord(request.getQuestion(), Section.QUESTION);
+                    responsePayload = response.toWire();
+                } else {
+                    // Forward to real DNS (Cloudflare)
+                    int originalId = request.getHeader().getID();
+                    Resolver resolver = new SimpleResolver("1.1.1.1");
+                    resolver.setTimeout(3);
+                    Message response = resolver.send(request);
+                    response.getHeader().setID(originalId); // IMPORTANTE: Restaurar ID original!
+                    responsePayload = response.toWire();
+                }
+
+                byte[] replyPacket = buildIpUdpPacket(responsePayload, dstIp, srcIp, dstPort, srcPort);
+                synchronized (out) {
+                    out.write(replyPacket);
+                }
+
+            } catch (Exception e) {
+                // Ignore parsing/resolution errors
+            }
+        });
+    }
+
+    private byte[] buildIpUdpPacket(byte[] payload, byte[] srcIp, byte[] dstIp, int srcPort, int dstPort) {
+        int totalLength = 20 + 8 + payload.length;
+        byte[] packet = new byte[totalLength];
+        
+        packet[0] = 0x45; // IPv4, IHL 5
+        packet[1] = 0;    // TOS
+        packet[2] = (byte) (totalLength >> 8);
+        packet[3] = (byte) (totalLength & 0xFF);
+        packet[4] = 0; packet[5] = 1; // ID
+        packet[6] = 0; packet[7] = 0; // Flags/Offset
+        packet[8] = 64; // TTL
+        packet[9] = 17; // UDP Protocol
+        packet[10] = 0; packet[11] = 0; // Header Checksum (calculated later)
+        
+        System.arraycopy(srcIp, 0, packet, 12, 4);
+        System.arraycopy(dstIp, 0, packet, 16, 4);
+        
+        // Calculate IP checksum
+        long sum = 0;
+        for (int i = 0; i < 20; i += 2) {
+            sum += ((packet[i] & 0xFF) << 8) | (packet[i + 1] & 0xFF);
+        }
+        while ((sum >> 16) > 0) {
+            sum = (sum & 0xFFFF) + (sum >> 16);
+        }
+        long checksum = ~sum & 0xFFFF;
+        packet[10] = (byte) (checksum >> 8);
+        packet[11] = (byte) (checksum & 0xFF);
+        
+        // UDP Header
+        int udpOffset = 20;
+        packet[udpOffset] = (byte) (srcPort >> 8);
+        packet[udpOffset + 1] = (byte) (srcPort & 0xFF);
+        packet[udpOffset + 2] = (byte) (dstPort >> 8);
+        packet[udpOffset + 3] = (byte) (dstPort & 0xFF);
+        
+        int udpLen = 8 + payload.length;
+        packet[udpOffset + 4] = (byte) (udpLen >> 8);
+        packet[udpOffset + 5] = (byte) (udpLen & 0xFF);
+        packet[udpOffset + 6] = 0; // Optional UDP checksum
+        packet[udpOffset + 7] = 0;
+        
+        System.arraycopy(payload, 0, packet, 28, payload.length);
+        return packet;
+    }
 }

@@ -105,18 +105,48 @@ public class FirewallActivity extends AppCompatActivity {
         // Firewall switch
         switchFirewall.setChecked(PrefMgr.getFirewallEnabled());
         switchFirewall.setOnCheckedChangeListener((btn, isChecked) -> {
-            PrefMgr.setFirewallEnabled(isChecked);
-            Intent svcIntent = new Intent(this, FirewallVpnService.class);
-            svcIntent.setAction(isChecked
-                    ? FirewallVpnService.ACTION_START
-                    : FirewallVpnService.ACTION_STOP);
-            startService(svcIntent);
-            Toast.makeText(this,
-                    isChecked ? "🔒 Firewall ativado" : "🔓 Firewall desativado",
-                    Toast.LENGTH_SHORT).show();
+            if (isChecked) {
+                Intent vpnIntent = android.net.VpnService.prepare(this);
+                if (vpnIntent != null) {
+                    startActivityForResult(vpnIntent, 0x0F);
+                } else {
+                    startVpnService();
+                }
+            } else {
+                stopVpnService();
+            }
         });
 
         btnAddUrl.setOnClickListener(v -> showAddUrlDialog());
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == 0x0F) {
+            if (resultCode == RESULT_OK) {
+                startVpnService();
+            } else {
+                switchFirewall.setChecked(false);
+                Toast.makeText(this, "Permissão de VPN negada", Toast.LENGTH_SHORT).show();
+            }
+        }
+        super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    private void startVpnService() {
+        PrefMgr.setFirewallEnabled(true);
+        Intent svcIntent = new Intent(this, FirewallVpnService.class);
+        svcIntent.setAction(FirewallVpnService.ACTION_START);
+        startService(svcIntent);
+        Toast.makeText(this, "🔒 Firewall ativado", Toast.LENGTH_SHORT).show();
+    }
+
+    private void stopVpnService() {
+        PrefMgr.setFirewallEnabled(false);
+        Intent svcIntent = new Intent(this, FirewallVpnService.class);
+        svcIntent.setAction(FirewallVpnService.ACTION_STOP);
+        startService(svcIntent);
+        Toast.makeText(this, "🔓 Firewall desativado", Toast.LENGTH_SHORT).show();
     }
 
     private void toggleCategory(List<String> domains, boolean add, String label) {
@@ -172,12 +202,7 @@ public class FirewallActivity extends AppCompatActivity {
 
     private void saveAndApply() {
         PrefMgr.setBlockedUrls(new HashSet<>(urlList));
-        // If firewall is active, restart the VPN service to apply new block list
-        if (switchFirewall.isChecked()) {
-            Intent svcIntent = new Intent(this, FirewallVpnService.class);
-            svcIntent.setAction(FirewallVpnService.ACTION_START);
-            startService(svcIntent);
-        }
+        // FirewallVpnService reads PrefMgr.getBlockedUrls() dynamically per packet, no restart needed.
     }
 
     // ---- Inner RecyclerView Adapter ----
