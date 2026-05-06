@@ -130,7 +130,7 @@ public class DsmAppHider extends BaseAppHider {
     public void tryToActivate(ActivationCallbackListener activationCallbackListener) {
         if (!dpm.isDeviceOwnerApp(context.getPackageName())) {
             Log.e("DsmAppHider", "Device Owner is not set. Run: adb shell dpm set-device-owner " + context.getPackageName() + "/.receivers.AdminReceiver");
-            // R.string.hide_app_failed_admin_inactive is more accurate than 'invalid_dsm_provider'
+            // Instead of 'invalid_dsm_provider', we tell the user to use the computer
             activationCallbackListener.onActivateCallback(this.getClass(), false, R.string.hide_app_failed_admin_inactive);
             return;
         }

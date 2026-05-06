@@ -1,40 +1,52 @@
 package deltazero.amarok.ui;
 
-import static deltazero.amarok.apphider.DsmAppHider.activationCallbackListener;
-
-import android.app.admin.DevicePolicyManager;
-import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
-
+import android.view.View;
+import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
-
-import com.catchingnow.delegatedscopeclient.DSMClient;
-
-import deltazero.amarok.apphider.DsmAppHider;
+import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import deltazero.amarok.R;
 
+/**
+ * DsmActivationActivity
+ * 
+ * In the new PJT system, this screen explains how to activate 
+ * the God Mode (Device Owner) using a computer, instead of 
+ * relying on a legacy server app.
+ */
 public class DsmActivationActivity extends AppCompatActivity {
-
-    public static final int dsmReqCode = 700;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_empty);
-        DSMClient.requestScopes(this, dsmReqCode, DevicePolicyManager.DELEGATION_PACKAGE_ACCESS);
+        setContentView(R.layout.activity_firewall); // Reusing a layout that has a toolbar and container
+
+        // Cleanup the reused layout for this context
+        MaterialToolbar toolbar = findViewById(R.id.firewall_toolbar);
+        if (toolbar != null) {
+            toolbar.setTitle("Ativar Modo Deus");
+            setSupportActionBar(toolbar);
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            toolbar.setNavigationOnClickListener(v -> finish());
+        }
+
+        // Show the instruction dialog immediately
+        showActivationInstructions();
     }
 
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == dsmReqCode) {
-            assert activationCallbackListener != null;
-            if (resultCode == RESULT_OK) {
-                activationCallbackListener.onActivateCallback(DsmAppHider.class, true, 0);
-            } else if (resultCode == RESULT_CANCELED) {
-                Log.w("DsmAppHider", "DsmHider: Permission denied");
-                activationCallbackListener.onActivateCallback(DsmAppHider.class, false, R.string.dsm_permission_denied);
-            }
-        }
+    private void showActivationInstructions() {
+        new MaterialAlertDialogBuilder(this)
+            .setTitle("Ativação Necessária")
+            .setMessage("Para ativar o Modo Deus (MDM), siga estes passos:\n\n" +
+                        "1. Conecte o tablet ao computador via USB.\n" +
+                        "2. Remova todas as contas do Google do tablet.\n" +
+                        "3. Rode o script 'setup_pjt.sh' ou o comando ADB:\n\n" +
+                        "adb shell dpm set-device-owner deltazero.amarok.foss/.receivers.AdminReceiver\n\n" +
+                        "O sistema PJT assumirá o controle total após o sucesso do comando.")
+            .setPositiveButton("Entendido", (dialog, which) -> finish())
+            .setCancelable(false)
+            .show();
     }
 }
