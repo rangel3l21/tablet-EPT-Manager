@@ -20,14 +20,7 @@ import deltazero.amarok.ui.DsmActivationActivity;
 
 public class DsmAppHider extends BaseAppHider {
     
-    private static final Set<String> CRITICAL_APPS = new HashSet<>(Arrays.asList(
-            "android",
-            "com.android.systemui",
-            "com.google.android.googlequicksearchbox", // Google Widget cause system freeze if hidden
-            "com.android.settings",
-            "com.android.vending", // Google Play Store
-            "com.google.android.gms" // Google Play Services
-    ));
+
     public static ActivationCallbackListener activationCallbackListener;
     private final DevicePolicyManager dpm;
     private final ComponentName admin;
@@ -47,21 +40,11 @@ public class DsmAppHider extends BaseAppHider {
         }
         android.content.pm.PackageManager pm = context.getPackageManager();
         
-        // Find default launcher
-        String defaultLauncher = null;
-        try {
-            Intent intent = new Intent(Intent.ACTION_MAIN);
-            intent.addCategory(Intent.CATEGORY_HOME);
-            android.content.pm.ResolveInfo resolveInfo = pm.resolveActivity(intent, android.content.pm.PackageManager.MATCH_DEFAULT_ONLY);
-            if (resolveInfo != null && resolveInfo.activityInfo != null) {
-                defaultLauncher = resolveInfo.activityInfo.packageName;
-            }
-        } catch (Exception e) {}
-
+        Set<String> strictlyCriticalApps = deltazero.amarok.utils.SystemAppSafeguard.getStrictlyCriticalApps(context);
         java.util.List<String> skippedApps = new java.util.ArrayList<>();
         for (String p : pkgNames) {
-            // SAFEGUARD: Do not hide the app itself, default launcher, or critical system apps
-            if (p.equals(context.getPackageName()) || p.equals(defaultLauncher) || CRITICAL_APPS.contains(p)) {
+            // SAFEGUARD: Do not hide the app itself or strictly critical system apps
+            if (p.equals(context.getPackageName()) || strictlyCriticalApps.contains(p)) {
                 Log.w("DsmAppHider", "Safeguard prevented hiding critical app: " + p);
                 skippedApps.add(p);
                 continue;
@@ -69,7 +52,11 @@ public class DsmAppHider extends BaseAppHider {
 
             try {
                 pm.getPackageInfo(p, 0);
-                dpm.setApplicationHidden(admin, p, true);
+                if (deltazero.amarok.utils.SystemAppSafeguard.SUSPEND_ONLY_APPS.contains(p)) {
+                    dpm.setPackagesSuspended(admin, new String[]{p}, true);
+                } else {
+                    dpm.setApplicationHidden(admin, p, true);
+                }
             } catch (android.content.pm.PackageManager.NameNotFoundException e) {
                 Log.w("DsmAppHider", "App not installed, skipping hide: " + p);
             } catch (Exception e) {
@@ -112,7 +99,11 @@ public class DsmAppHider extends BaseAppHider {
                 // If it was hidden by setApplicationHidden, it will still be found by getPackageInfo
                 // However, we should use MATCH_UNINSTALLED_PACKAGES flag to find hidden apps
                 pm.getPackageInfo(p, android.content.pm.PackageManager.MATCH_UNINSTALLED_PACKAGES);
-                dpm.setApplicationHidden(admin, p, false);
+                if (deltazero.amarok.utils.SystemAppSafeguard.SUSPEND_ONLY_APPS.contains(p)) {
+                    dpm.setPackagesSuspended(admin, new String[]{p}, false);
+                } else {
+                    dpm.setApplicationHidden(admin, p, false);
+                }
             } catch (android.content.pm.PackageManager.NameNotFoundException e) {
                 Log.w("DsmAppHider", "App not found, skipping unhide: " + p);
             } catch (Exception e) {

@@ -77,10 +77,14 @@ public class AppListViewModel extends AndroidViewModel {
 
     public void toggleAppHidden(AppInfo app) {
         Set<String> hiddenApps = PrefMgr.getHideApps();
-        if (hiddenApps.contains(app.packageName())) {
-            hiddenApps.remove(app.packageName());
+        Set<String> dependencies = deltazero.amarok.utils.SystemAppSafeguard.getDependencies(app.packageName());
+        
+        boolean isCurrentlyHidden = hiddenApps.contains(app.packageName());
+        
+        if (isCurrentlyHidden) {
+            hiddenApps.removeAll(dependencies);
         } else {
-            hiddenApps.add(app.packageName());
+            hiddenApps.addAll(dependencies);
         }
         PrefMgr.setHideApps(hiddenApps);
     }

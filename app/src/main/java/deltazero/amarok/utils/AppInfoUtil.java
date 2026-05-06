@@ -22,10 +22,12 @@ import deltazero.amarok.R;
 
 public class AppInfoUtil {
     private final PackageManager pkgMgr;
+    private final Context context;
     private final List<AppInfo> appInfoList = new ArrayList<>();
     private final Set<String> predefinedRootApps;
 
     public AppInfoUtil(Context context) {
+        this.context = context;
         pkgMgr = context.getPackageManager();
         predefinedRootApps = new HashSet<>(Arrays.asList(context.getResources().getStringArray(R.array.root_app_packages)));
     }
@@ -51,6 +53,7 @@ public class AppInfoUtil {
         appInfoList.clear();
 
         Set<String> hiddenApps = PrefMgr.getHideApps();
+        Set<String> criticalApps = SystemAppSafeguard.getStrictlyCriticalApps(context);
 
         // Get applications info
         List<ApplicationInfo> installedApplications = pkgMgr.getInstalledApplications(GET_META_DATA | MATCH_DISABLED_COMPONENTS | MATCH_UNINSTALLED_PACKAGES);
@@ -58,6 +61,10 @@ public class AppInfoUtil {
 
             // Filter out Amarok itself
             if (applicationInfo.packageName.contains("deltazero.amarok"))
+                continue;
+
+            // SAFEGUARD: Do not show strictly critical apps in the UI
+            if (criticalApps.contains(applicationInfo.packageName))
                 continue;
 
             var appInfo = new AppInfo(
