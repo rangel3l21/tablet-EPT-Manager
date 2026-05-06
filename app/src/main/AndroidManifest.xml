@@ -118,6 +118,24 @@
             android:name=".ui.FirewallActivity"
             android:exported="false"
             android:theme="@style/Theme.Amarok" />
+            
+        <activity
+            android:name=".ui.CategoryDetailsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Amarok" />
+
+        <activity
+            android:name=".ui.WishlistActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Amarok" />
+
+        <receiver
+            android:name=".receivers.InstallReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="deltazero.amarok.ACTION_INSTALL_COMPLETE" />
+            </intent-filter>
+        </receiver>
 
         <service
             android:name=".network.FirewallVpnService"
@@ -127,6 +145,25 @@
                 <action android:name="android.net.VpnService" />
             </intent-filter>
         </service>
+
+        <service
+            android:name=".services.AppLockAccessibilityService"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config" />
+        </service>
+
+        <activity
+            android:name=".ui.AppLockActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:launchMode="singleInstance"
+            android:theme="@style/Theme.Amarok" />
 
         <service
             android:name=".QSTileService"

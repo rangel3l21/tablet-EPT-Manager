@@ -87,6 +87,7 @@ public class AppListViewModel extends AndroidViewModel {
             hiddenApps.addAll(dependencies);
         }
         PrefMgr.setHideApps(hiddenApps);
+        android.widget.Toast.makeText(getApplication(), "Ocultos: " + hiddenApps.size() + " (" + (isCurrentlyHidden ? "Removido" : "Adicionado") + " " + app.packageName() + ")", android.widget.Toast.LENGTH_SHORT).show();
     }
 
     private void updateAppList() {

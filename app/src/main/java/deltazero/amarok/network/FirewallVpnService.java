@@ -149,8 +149,24 @@ public class FirewallVpnService extends VpnService implements Runnable {
 
                 Set<String> blockedUrls = PrefMgr.getBlockedUrls();
                 boolean isBlocked = false;
-                for (String blocked : blockedUrls) {
-                    if (domain.equals(blocked) || domain.endsWith("." + blocked)) {
+                for (String item : blockedUrls) {
+                    String targetDomain;
+                    if (item.startsWith("1:") || item.startsWith("0:")) {
+                        if (item.startsWith("0:")) {
+                            continue; // Category is disabled
+                        }
+                        int secondColon = item.indexOf(':', 2);
+                        if (secondColon != -1 && secondColon < item.length() - 1) {
+                            targetDomain = item.substring(secondColon + 1);
+                        } else {
+                            continue;
+                        }
+                    } else {
+                        // Legacy format
+                        targetDomain = item;
+                    }
+
+                    if (domain.equals(targetDomain) || domain.endsWith("." + targetDomain)) {
                         isBlocked = true;
                         break;
                     }

@@ -31,8 +31,13 @@ public class SystemAppSafeguard {
     );
 
     // Apps that should be Suspended instead of Hidden to prevent system crashes
-    public static final Set<String> SUSPEND_ONLY_APPS = new HashSet<>(Collections.singletonList(
-            "com.android.settings" // Settings crashes Samsung/Motorola tablets if fully hidden
+    public static final Set<String> SUSPEND_ONLY_APPS = new HashSet<>();
+
+    // Apps that are protected by the OS and cannot be hidden, so we App-Lock them instead
+    public static final Set<String> LOCKED_APPS = new HashSet<>(Arrays.asList(
+            "com.android.vending",
+            "com.google.android.gms",
+            "com.android.settings" // OS prevents hiding/suspending Settings
     ));
 
     /**

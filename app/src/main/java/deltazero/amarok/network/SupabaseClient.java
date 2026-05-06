@@ -233,9 +233,97 @@ public class SupabaseClient {
             if (json.has("msg")) {
                 return json.getString("msg");
             }
+            if (json.has("message")) {
+                return json.getString("message");
+            }
             return resBody;
         } catch (Exception e) {
             return resBody;
+        }
+    }
+
+    public interface WishlistCallback {
+        void onSuccess(List<deltazero.amarok.models.WishlistApp> apps);
+        void onError(String error);
+    }
+    
+    public interface SimpleCallback {
+        void onSuccess();
+        void onError(String error);
+    }
+
+    public static void fetchWishlist(String token, String userId, WishlistCallback callback) {
+        Request request = new Request.Builder()
+                .url(SupabaseConfig.SUPABASE_URL + "/rest/v1/wishlist?user_id=eq." + userId)
+                .get()
+                .addHeader("apikey", SupabaseConfig.SUPABASE_KEY)
+                .addHeader("Authorization", "Bearer " + token)
+                .build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                callback.onError(e.getMessage());
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                String resBody = response.body().string();
+                if (response.isSuccessful()) {
+                    try {
+                        JSONArray resArray = new JSONArray(resBody);
+                        List<deltazero.amarok.models.WishlistApp> apps = new ArrayList<>();
+                        for (int i = 0; i < resArray.length(); i++) {
+                            JSONObject obj = resArray.getJSONObject(i);
+                            String packageName = obj.getString("package_name");
+                            deltazero.amarok.models.WishlistApp app = new deltazero.amarok.models.WishlistApp(packageName);
+                            if (obj.has("status") && !obj.isNull("status")) {
+                                app.status = obj.getString("status");
+                            }
+                            apps.add(app);
+                        }
+                        callback.onSuccess(apps);
+                    } catch (Exception e) {
+                        callback.onError("Parse error: " + e.getMessage());
+                    }
+                } else {
+                    callback.onError(parseError(resBody));
+                }
+            }
+        });
+    }
+
+    public static void updateWishlistStatus(String token, String userId, String packageName, String status, SimpleCallback callback) {
+        try {
+            JSONObject json = new JSONObject();
+            json.put("status", status);
+
+            RequestBody body = RequestBody.create(json.toString(), JSON);
+            Request request = new Request.Builder()
+                    .url(SupabaseConfig.SUPABASE_URL + "/rest/v1/wishlist?user_id=eq." + userId + "&package_name=eq." + packageName)
+                    .patch(body)
+                    .addHeader("apikey", SupabaseConfig.SUPABASE_KEY)
+                    .addHeader("Authorization", "Bearer " + token)
+                    .addHeader("Content-Type", "application/json")
+                    .build();
+
+            client.newCall(request).enqueue(new Callback() {
+                @Override
+                public void onFailure(Call call, IOException e) {
+                    callback.onError(e.getMessage());
+                }
+
+                @Override
+                public void onResponse(Call call, Response response) throws IOException {
+                    if (response.isSuccessful()) {
+                        callback.onSuccess();
+                    } else {
+                        callback.onError("Update failed: " + response.code());
+                    }
+                }
+            });
+        } catch (Exception e) {
+            callback.onError(e.getMessage());
         }
     }
 }

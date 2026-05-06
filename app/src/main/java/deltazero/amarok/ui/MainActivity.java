@@ -25,6 +25,10 @@ import deltazero.amarok.ui.settings.SwitchFileHiderActivity;
 import deltazero.amarok.utils.PermissionUtil;
 import deltazero.amarok.utils.UpdateUtil;
 import nl.dionsegijn.konfetti.xml.KonfettiView;
+import android.provider.Settings;
+import android.content.ComponentName;
+import android.text.TextUtils;
+import deltazero.amarok.services.AppLockAccessibilityService;
 
 public class MainActivity extends AmarokActivity {
 
@@ -83,6 +87,8 @@ public class MainActivity extends AmarokActivity {
             Hider.showNoHiderDialog(this, msg);
         });
 
+        checkAccessibilityService();
+
         PrefMgr.getFileHider(this).tryToActive((fileHiderClass, succeed, msg) -> {
             if (succeed) return;
             PrefMgr.setFileHiderMode(NoneFileHider.class);
@@ -137,6 +143,14 @@ public class MainActivity extends AmarokActivity {
 
         startActivity(new Intent(this, SettingsActivity.class));
 
+    }
+
+    public void openFirewall(View view) {
+        startActivity(new Intent(this, FirewallActivity.class));
+    }
+
+    public void openWishlist(View view) {
+        startActivity(new Intent(this, WishlistActivity.class));
     }
 
     public void setHideFile(View view) {
@@ -197,6 +211,34 @@ public class MainActivity extends AmarokActivity {
     protected void onResume() {
         refreshUi(Hider.getState());
         super.onResume();
+    }
+
+    private boolean isAccessibilityServiceEnabled() {
+        ComponentName expectedComponentName = new ComponentName(this, AppLockAccessibilityService.class);
+        String enabledServicesSetting = Settings.Secure.getString(getContentResolver(), Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
+        if (enabledServicesSetting == null) return false;
+        TextUtils.SimpleStringSplitter colonSplitter = new TextUtils.SimpleStringSplitter(':');
+        colonSplitter.setString(enabledServicesSetting);
+        while (colonSplitter.hasNext()) {
+            ComponentName enabledService = ComponentName.unflattenFromString(colonSplitter.next());
+            if (enabledService != null && enabledService.equals(expectedComponentName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void checkAccessibilityService() {
+        if (!isAccessibilityServiceEnabled()) {
+            new MaterialAlertDialogBuilder(this)
+                    .setTitle("Acessibilidade Necessária")
+                    .setMessage("Para usar o bloqueio de senha na Play Store, ative o Amarok nas configurações de Acessibilidade.")
+                    .setPositiveButton("Ativar Agora", (dialog, which) -> {
+                        startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
+                    })
+                    .setNegativeButton(R.string.cancel, null)
+                    .show();
+        }
     }
 }
 

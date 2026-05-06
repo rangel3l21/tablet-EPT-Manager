@@ -74,10 +74,13 @@ public class AppListAdapter extends ListAdapter<AppInfo, AppListAdapter.AppListH
             tvAppName.setText(app.label());
             tvPkgName.setText(app.packageName());
             ivAppIcon.setImageDrawable(app.icon());
+
+            // Remove listener to avoid programmatic triggers
+            cbIsHidden.setOnCheckedChangeListener(null);
             cbIsHidden.setChecked(PrefMgr.getHideApps().contains(app.packageName()));
 
             cbIsHidden.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                if (currentApp != null && buttonView.isPressed()) {
+                if (currentApp != null) {
                     listener.onAppToggled(currentApp);
                 }
             });

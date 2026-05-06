@@ -229,4 +229,5 @@
     <string name="hide_from_recents_description">Oculte o Amarok da tela de aplicativos recentes.</string>
     <string name="hide_amarok_icon_dialog_title">Ocultar ícone do Amarok</string>
     <string name="hide_amarok_icon_dialog_message">Esta opção ocultará o Amarok do iniciador. Você pode discar *#*#262765#*#* (262765 soletra \"amarok\" no teclado T9) para acessar o Amarok novamente.</string>
+    <string name="accessibility_service_description">Monitora o início de aplicativos bloqueados pelo Amarok para solicitar a senha de acesso.</string>
 </resources>

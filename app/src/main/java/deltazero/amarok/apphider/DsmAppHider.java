@@ -50,12 +50,26 @@ public class DsmAppHider extends BaseAppHider {
                 continue;
             }
 
+            // SKIP: Do not try to hide LOCKED apps. They are protected by OS but handled by our AppLockAccessibilityService.
+            if (deltazero.amarok.utils.SystemAppSafeguard.LOCKED_APPS.contains(p)) {
+                Log.i("DsmAppHider", "Skipping DPM hide for LOCKED_APP: " + p);
+                continue;
+            }
+
             try {
                 pm.getPackageInfo(p, 0);
                 if (deltazero.amarok.utils.SystemAppSafeguard.SUSPEND_ONLY_APPS.contains(p)) {
-                    dpm.setPackagesSuspended(admin, new String[]{p}, true);
+                    String[] unSuspended = dpm.setPackagesSuspended(admin, new String[]{p}, true);
+                    if (unSuspended != null && unSuspended.length > 0) {
+                        Log.w("DsmAppHider", "OS prevented suspending app: " + p);
+                        skippedApps.add(p);
+                    }
                 } else {
-                    dpm.setApplicationHidden(admin, p, true);
+                    boolean success = dpm.setApplicationHidden(admin, p, true);
+                    if (!success) {
+                        Log.w("DsmAppHider", "OS prevented hiding app: " + p);
+                        skippedApps.add(p);
+                    }
                 }
             } catch (android.content.pm.PackageManager.NameNotFoundException e) {
                 Log.w("DsmAppHider", "App not installed, skipping hide: " + p);
@@ -66,7 +80,7 @@ public class DsmAppHider extends BaseAppHider {
 
         if (!skippedApps.isEmpty()) {
             new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
-                String msg = "Os seguintes aplicativos são CRÍTICOS para o Android e foram mantidos ativos por segurança (ocultá-los congelaria o tablet):\n\n" 
+                String msg = "Os seguintes aplicativos não puderam ser ocultados porque o próprio Sistema Operacional (Android) os protege ativamente ou porque ocultá-los causaria um travamento:\n\n" 
                         + String.join("\n", skippedApps);
                 
                 if (context instanceof android.app.Activity) {
