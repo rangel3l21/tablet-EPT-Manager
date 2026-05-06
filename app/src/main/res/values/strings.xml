@@ -34,8 +34,8 @@
     <string name="unhidden_toast">Não oculto</string>
     <string name="show_debug_info">Informações de depuração</string>
     <string name="debug_info_description">Exibe informações para ajudar na resolução de problemas.</string>
-    <string name="invalid_dsm_provider">PJT: Modo Deus não ativado. Por favor, conecte ao computador e use o script de setup.</string>
-    <string name="hide_app_failed_admin_inactive">Erro: O Modo Deus (Device Owner) não está ativo. Use o computador para ativar.</string>
+    <string name="invalid_dsm_provider">DSM: Provedor DSM inválido. Você instalou e ativou o provedor DSM em seu dispositivo\?</string>
+    <string name="hide_app_failed_admin_inactive">Não foi possível ocultar o aplicativo: Provedor DSM não está ativo.</string>
     <string name="add_hide_files">Adicionar pasta oculta</string>
     <string name="folder_selector_hints">Dicas para o seletor de pastas:
 \n\t1. Clique em \'Usar Esta Pasta\' para selecionar a pasta
@@ -79,7 +79,7 @@
     <string name="shizuku_hidden_api_error">Não foi possível ocultar o aplicativo: Não foi possível acessar a API IPackageManager.</string>
     <string name="shizuku_service_not_running">Shizuku: Serviço não em execução.</string>
     <string name="apphider_not_ava_title">Serviço não disponível</string>
-    <string name="dsm_permission_denied">PJT: Permissão administrativa negada.</string>
+    <string name="dsm_permission_denied">DSM: Permissão negada</string>
     <string name="apphider_none">Desativado</string>
     <string name="apphider_none_description">Desativar a ocultação de aplicativos.</string>
     <string name="apphider_root">Modo root</string>
@@ -89,9 +89,9 @@
     <string name="apphider_shizuku_description">Ocultação de aplicativos com Shizuku (ou Sui).
 \nRecomendado se seu dispositivo estiver executando o Android 11+ ou tiver o framework Xposed. Shizuku ou Sui instalados e ativos são necessários.
 \n</string>
-    <string name="apphider_dsm">Modo Deus (PJT MDM)</string>
-    <string name="apphider_dsm_description">Ocultação de aplicativos via controle administrativo total (Device Owner).
-\nRecomendado para o gerenciamento profissional do tablet. Requer ativação inicial via computador usando o script PJT.</string>
+    <string name="apphider_dsm">Modo DSM</string>
+    <string name="apphider_dsm_description">Ocultação de aplicativos com o Delegated-Scopes-Manager.
+\nNão recomendado, a menos que seu dispositivo esteja executando o Android 10 ou anterior e não tenha root. Pode apresentar bugs e funcionar de maneira inesperada. A instalação do Icebox (ou StopAPP) como proprietário do dispositivo é necessária.</string>
     <string name="learn_more">Tutorial de configuração</string>
     <string name="option_unava_when_hidden">As opções não estão disponíveis até que se desligue o modo oculto.</string>
     <string name="obfuscate_filename">Obfuscar nomes de arquivos</string>
