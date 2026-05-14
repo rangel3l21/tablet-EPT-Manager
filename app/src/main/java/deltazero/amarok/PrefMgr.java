@@ -22,6 +22,7 @@ import deltazero.amarok.filehider.ChmodFileHider;
 import deltazero.amarok.filehider.NoMediaFileHider;
 import deltazero.amarok.filehider.NoneFileHider;
 import deltazero.amarok.filehider.ObfuscateFileHider;
+import deltazero.amarok.utils.SystemAppSafeguard;
 import deltazero.amarok.utils.UpdateUtil;
 
 public final class PrefMgr {
@@ -136,11 +137,12 @@ public final class PrefMgr {
 
     public static Set<String> getHideApps() {
         // Return a defensive copy to avoid SharedPreferences caching issues
-        return new HashSet<>(mPrefs.getStringSet(HIDE_PKG_NAMES, new HashSet<>()));
+        return SystemAppSafeguard.sanitizeHiddenApps(mPrefs.getStringSet(HIDE_PKG_NAMES, new HashSet<>()));
     }
 
     public static void setHideApps(Set<String> pkgNames) {
-        mPrefEditor.putStringSet(HIDE_PKG_NAMES, pkgNames);
+        Set<String> sanitizedPkgNames = SystemAppSafeguard.sanitizeHiddenApps(pkgNames);
+        mPrefEditor.putStringSet(HIDE_PKG_NAMES, sanitizedPkgNames);
         mPrefEditor.apply();
         // Auto-sync to cloud if logged in
         if (getSupabaseToken() != null) {

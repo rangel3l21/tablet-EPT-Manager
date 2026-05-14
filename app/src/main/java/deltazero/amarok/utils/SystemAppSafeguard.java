@@ -13,6 +13,11 @@ import java.util.Set;
 
 public class SystemAppSafeguard {
 
+    // Apps that should remain visible even when they appear in synced hidden app lists.
+    public static final Set<String> ALWAYS_VISIBLE_APPS = new HashSet<>(Arrays.asList(
+            "com.android.camera2"
+    ));
+
     // Apps that should NEVER be hidden because they crash the tablet, and they shouldn't even appear in the list.
     // Note: com.android.settings is NOT here because we will use "Suspend" instead of "Hide" for it.
     private static final Set<String> STRICT_CRITICAL_APPS = new HashSet<>(Arrays.asList(
@@ -59,6 +64,16 @@ public class SystemAppSafeguard {
         } catch (Exception ignored) {}
 
         return criticalApps;
+    }
+
+    public static boolean isAlwaysVisibleApp(String pkg) {
+        return ALWAYS_VISIBLE_APPS.contains(pkg);
+    }
+
+    public static Set<String> sanitizeHiddenApps(Set<String> pkgNames) {
+        Set<String> sanitized = new HashSet<>(pkgNames);
+        sanitized.removeAll(ALWAYS_VISIBLE_APPS);
+        return sanitized;
     }
 
     /**

@@ -15,6 +15,7 @@ import java.util.concurrent.Executors;
 import deltazero.amarok.PrefMgr;
 import deltazero.amarok.utils.AppInfoUtil;
 import deltazero.amarok.utils.AppInfoUtil.AppInfo;
+import deltazero.amarok.utils.SystemAppSafeguard;
 
 public class AppListViewModel extends AndroidViewModel {
     private final AppInfoUtil appInfoUtil;
@@ -76,8 +77,13 @@ public class AppListViewModel extends AndroidViewModel {
     }
 
     public void toggleAppHidden(AppInfo app) {
+        if (SystemAppSafeguard.isAlwaysVisibleApp(app.packageName())) {
+            android.widget.Toast.makeText(getApplication(), app.packageName() + " deve permanecer visivel.", android.widget.Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         Set<String> hiddenApps = PrefMgr.getHideApps();
-        Set<String> dependencies = deltazero.amarok.utils.SystemAppSafeguard.getDependencies(app.packageName());
+        Set<String> dependencies = SystemAppSafeguard.getDependencies(app.packageName());
         
         boolean isCurrentlyHidden = hiddenApps.contains(app.packageName());
         

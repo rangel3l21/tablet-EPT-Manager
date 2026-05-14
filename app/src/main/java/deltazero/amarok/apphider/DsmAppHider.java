@@ -17,6 +17,7 @@ import java.util.Set;
 import deltazero.amarok.receivers.AdminReceiver;
 import deltazero.amarok.R;
 import deltazero.amarok.ui.DsmActivationActivity;
+import deltazero.amarok.utils.SystemAppSafeguard;
 
 public class DsmAppHider extends BaseAppHider {
     
@@ -40,25 +41,27 @@ public class DsmAppHider extends BaseAppHider {
         }
         android.content.pm.PackageManager pm = context.getPackageManager();
         
-        Set<String> strictlyCriticalApps = deltazero.amarok.utils.SystemAppSafeguard.getStrictlyCriticalApps(context);
+        unhideAlwaysVisibleApps();
+
+        Set<String> strictlyCriticalApps = SystemAppSafeguard.getStrictlyCriticalApps(context);
         java.util.List<String> skippedApps = new java.util.ArrayList<>();
         for (String p : pkgNames) {
             // SAFEGUARD: Do not hide the app itself or strictly critical system apps
-            if (p.equals(context.getPackageName()) || strictlyCriticalApps.contains(p)) {
+            if (p.equals(context.getPackageName()) || strictlyCriticalApps.contains(p) || SystemAppSafeguard.isAlwaysVisibleApp(p)) {
                 Log.w("DsmAppHider", "Safeguard prevented hiding critical app: " + p);
                 skippedApps.add(p);
                 continue;
             }
 
             // SKIP: Do not try to hide LOCKED apps. They are protected by OS but handled by our AppLockAccessibilityService.
-            if (deltazero.amarok.utils.SystemAppSafeguard.LOCKED_APPS.contains(p)) {
+            if (SystemAppSafeguard.LOCKED_APPS.contains(p)) {
                 Log.i("DsmAppHider", "Skipping DPM hide for LOCKED_APP: " + p);
                 continue;
             }
 
             try {
                 pm.getPackageInfo(p, 0);
-                if (deltazero.amarok.utils.SystemAppSafeguard.SUSPEND_ONLY_APPS.contains(p)) {
+                if (SystemAppSafeguard.SUSPEND_ONLY_APPS.contains(p)) {
                     String[] unSuspended = dpm.setPackagesSuspended(admin, new String[]{p}, true);
                     if (unSuspended != null && unSuspended.length > 0) {
                         Log.w("DsmAppHider", "OS prevented suspending app: " + p);
@@ -113,7 +116,7 @@ public class DsmAppHider extends BaseAppHider {
                 // If it was hidden by setApplicationHidden, it will still be found by getPackageInfo
                 // However, we should use MATCH_UNINSTALLED_PACKAGES flag to find hidden apps
                 pm.getPackageInfo(p, android.content.pm.PackageManager.MATCH_UNINSTALLED_PACKAGES);
-                if (deltazero.amarok.utils.SystemAppSafeguard.SUSPEND_ONLY_APPS.contains(p)) {
+                if (SystemAppSafeguard.SUSPEND_ONLY_APPS.contains(p)) {
                     dpm.setPackagesSuspended(admin, new String[]{p}, false);
                 } else {
                     dpm.setApplicationHidden(admin, p, false);
@@ -122,6 +125,18 @@ public class DsmAppHider extends BaseAppHider {
                 Log.w("DsmAppHider", "App not found, skipping unhide: " + p);
             } catch (Exception e) {
                 Log.e("DsmAppHider", "Error unhiding app: " + p, e);
+            }
+        }
+    }
+
+    private void unhideAlwaysVisibleApps() {
+        for (String p : SystemAppSafeguard.ALWAYS_VISIBLE_APPS) {
+            try {
+                dpm.setPackagesSuspended(admin, new String[]{p}, false);
+                dpm.setApplicationHidden(admin, p, false);
+                Log.i("DsmAppHider", "Ensured always-visible app is available: " + p);
+            } catch (Exception e) {
+                Log.w("DsmAppHider", "Could not ensure always-visible app is available: " + p, e);
             }
         }
     }
