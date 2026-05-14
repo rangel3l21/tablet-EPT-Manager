@@ -4,13 +4,12 @@ import android.content.pm.PackageManager;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.FragmentActivity;
-import androidx.preference.DropDownPreference;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceScreen;
 
 import deltazero.amarok.PrefMgr;
 import deltazero.amarok.R;
-import deltazero.amarok.utils.UpdateUtil;
+import deltazero.amarok.utils.ServerUpdateManager;
 import rikka.material.preference.MaterialSwitchPreference;
 
 public class UpdateCategory extends BaseCategory {
@@ -31,27 +30,10 @@ public class UpdateCategory extends BaseCategory {
         checkUpdatePref.setIcon(R.drawable.update_black_24dp);
         checkUpdatePref.setSummary(activity.getString(R.string.check_update_description, appVersionName));
         checkUpdatePref.setOnPreferenceClickListener(preference -> {
-            UpdateUtil.checkAndNotify(activity, false);
+            ServerUpdateManager.checkAndNotify(activity, false);
             return true;
         });
         addPreference(checkUpdatePref);
-
-        // Update channel preference
-        var updateChannelPref = new DropDownPreference(activity);
-        updateChannelPref.setKey(PrefMgr.UPDATE_CHANNEL);
-        updateChannelPref.setIcon(R.drawable.alt_route_24dp_1f1f1f_fill0_wght400_grad0_opsz24);
-        updateChannelPref.setTitle(R.string.update_channel);
-        updateChannelPref.setSummary("%s");
-        updateChannelPref.setEntries(new CharSequence[]{
-                activity.getString(R.string.update_channel_release),
-                activity.getString(R.string.update_channel_beta)
-        });
-        updateChannelPref.setEntryValues(new CharSequence[]{
-                UpdateUtil.UpdateChannel.RELEASE.name(),
-                UpdateUtil.UpdateChannel.BETA.name()
-        });
-        updateChannelPref.setDefaultValue(UpdateUtil.UpdateChannel.RELEASE.name());
-        addPreference(updateChannelPref);
 
         // Auto update switch
         var autoUpdatePref = new MaterialSwitchPreference(activity);

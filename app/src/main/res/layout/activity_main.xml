@@ -65,6 +65,15 @@
                 android:textColor="?android:attr/textColorSecondary"
                 android:textStyle="italic" />
 
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/main_sw_teacher_mode"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="50dp"
+                android:layout_marginTop="16dp"
+                android:text="Sou Professor"
+                android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
+
             <com.google.android.material.card.MaterialCardView
 
                 android:id="@+id/main_card_status"
@@ -208,6 +217,20 @@
                 android:onClick="openWishlist"
                 android:text="Baixar Aplicativos"
                 app:icon="@drawable/ic_app"
+                app:iconPadding="15dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/main_bt_power_off_devices"
+                style="@style/Widget.Material3.Button.TextButton.Icon"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:layout_marginHorizontal="50dp"
+                android:layout_marginTop="8dp"
+                android:allowClickWhenDisabled="true"
+                android:gravity="start|center_vertical"
+                android:onClick="powerOffConnectedDevices"
+                android:text="Desligar Tablets"
+                app:icon="@drawable/crisis_alert_black_24dp"
                 app:iconPadding="15dp" />
 
             <com.google.android.material.button.MaterialButton

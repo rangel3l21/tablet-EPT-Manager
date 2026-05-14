@@ -15,8 +15,10 @@ import com.google.android.material.appbar.MaterialToolbar;
 
 import deltazero.amarok.PrefMgr;
 import deltazero.amarok.R;
+import deltazero.amarok.RemotePowerService;
 import deltazero.amarok.SyncManager;
 import deltazero.amarok.network.SupabaseClient;
+import deltazero.amarok.utils.HashUtil;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -60,11 +62,14 @@ public class LoginActivity extends AppCompatActivity {
 
         SupabaseClient.AuthCallback callback = new SupabaseClient.AuthCallback() {
             @Override
-            public void onSuccess(String token, String userId) {
+            public void onSuccess(String token, String refreshToken, String userId) {
                 if (token != null) {
                     PrefMgr.setSupabaseToken(token);
+                    PrefMgr.setSupabaseRefreshToken(refreshToken);
                     PrefMgr.setSupabaseUserId(userId);
                     PrefMgr.setSupabaseEmail(email);
+                    PrefMgr.setAmarokPassword(HashUtil.calculateHash(password));
+                    RemotePowerService.startService(LoginActivity.this);
 
                     // Sync settings immediately after login
                     SyncManager.pullSettings(LoginActivity.this, new SyncManager.SyncResultCallback() {

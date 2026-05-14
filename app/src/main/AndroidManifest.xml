@@ -19,6 +19,9 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.SET_WALLPAPER" />
 
     <queries>
         <intent>
@@ -131,7 +134,7 @@
 
         <receiver
             android:name=".receivers.InstallReceiver"
-            android:exported="true">
+            android:exported="false">
             <intent-filter>
                 <action android:name="deltazero.amarok.ACTION_INSTALL_COMPLETE" />
             </intent-filter>
@@ -188,6 +191,14 @@
                 android:value="For the display of a system-wide panic button" />
         </service>
         <service
+            android:name=".RemotePowerService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="deltazero.amarok.SPECIAL_USE_REMOTE_POWER"
+                android:value="Keeps school tablets listening for short-lived administrator power commands" />
+        </service>
+        <service
             android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
             android:enabled="false"
             android:exported="false">
@@ -221,6 +232,14 @@
                 <action android:name="deltazero.amarok.HIDE" />
                 <action android:name="deltazero.amarok.UNHIDE" />
                 <action android:name="deltazero.amarok.TOGGLE" />
+            </intent-filter>
+        </receiver>
+        <receiver
+            android:name=".receivers.BootReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
         <receiver

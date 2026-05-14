@@ -60,6 +60,11 @@ public final class Hider {
     }
 
     public static void hide(Context context) {
+        if (PrefMgr.isTeacherMode()) {
+            Toast.makeText(context, "Modo professor ativo: este aparelho nao sera bloqueado.", Toast.LENGTH_LONG).show();
+            return;
+        }
+
         PrefMgr.getAppHider(context).tryToActivate((appHiderClass, succeed, msg) -> {
             if (succeed) {
                 processHide(context);

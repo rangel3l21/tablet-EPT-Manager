@@ -101,3 +101,22 @@ Provides multiple triggers for instant hide/unhide operations:
 - **Auto Hide on Screen Off:** Implemented via `ScreenStatusReceiver.java` and `AutoHideUtil.java`
 - **Intent API:** Managed by `ActionReceiver.java`
 - **Widget:** `ToggleWidget.java`
+
+### 7. App Download Wishlist
+
+**Directory:** `app/src/main/java/deltazero/amarok/utils/`
+
+- `AuroraApiManager.java`: resolves APKPure download metadata by approved package name.
+- `ApkDogManager.java`: fallback resolver for APK.DOG variants when APKPure returns no compatible installable package.
+- `AppDownloader.java`: downloads APKPure APK/XAPK/APKS files and extracts nested APK splits when needed.
+- `ApkInstaller.java` and `InstallReceiver.java`: install downloaded APK sets through Android `PackageInstaller`.
+
+**UI:** `app/src/main/java/deltazero/amarok/ui/WishlistActivity.java` manages the "Baixar Aplicativos" wishlist and queue.
+
+### 8. Remote Power Commands
+
+- `RemotePowerManager.java`: sends short-lived Supabase power commands and executes received commands once per device.
+- `RemotePowerService.java`: foreground polling service that checks for active commands every 30 seconds.
+- `receivers/BootReceiver.java`: restarts the polling service after boot when the user is logged in.
+- `SupabaseClient.java`: reads/writes the `remote_power_commands` table. Commands expire after 5 minutes and are ignored after execution.
+- Teacher mode (`PrefMgr.isTeacherMode()` and the "Sou Professor" switch in `MainActivity`) turns the current device into a controller only: it can edit cloud lists and send commands, but ignores local hiding, firewall activation, app install queue, app lock, and received power commands.

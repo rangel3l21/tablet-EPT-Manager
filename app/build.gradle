@@ -159,6 +159,47 @@ configurations.configureEach {
     exclude group: 'androidx.appcompat', module: 'appcompat'
 }
 
+// =====================================================
+// 📦 Geração Automática de Release Metadata
+// =====================================================
+// Task que executa após compilação para gerar:
+// - releases/latest.json
+// - releases/sha256.txt
+
+tasks.whenTaskAdded { task ->
+    if (task.name == "assembleFossDebug") {
+        task.finalizedBy("generateReleaseMetadata")
+    }
+    if (task.name == "assemblePlaystoreDebug") {
+        task.finalizedBy("generateReleaseMetadata")
+    }
+    if (task.name == "assembleAppcenterDebug") {
+        task.finalizedBy("generateReleaseMetadata")
+    }
+}
+
+task generateReleaseMetadata(type: Exec) {
+    description = "Generate release metadata (latest.json, sha256.txt)"
+    group = "Release"
+    
+    workingDir rootProject.rootDir
+    
+    // Detecta Sistema Operacional e usa o python correto
+    def pythonCmd = System.getProperty("os.name").toLowerCase().contains("win") ? "python" : "python3"
+    
+    commandLine pythonCmd, "scripts/generate-release.py"
+    
+    // Ignora erros se o script falhar (opcional)
+    ignoreExitValue = false
+}
+
+// Tarefa para limpar releases antigos (opcional)
+task cleanOldReleases(type: Delete) {
+    description = "Clean old release metadata"
+    group = "Release"
+    delete "releases/"
+}
+
 apply plugin: 'dev.rikka.tools.autoresconfig'
 autoResConfig {
     generateClass = true

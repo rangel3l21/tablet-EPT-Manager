@@ -101,8 +101,15 @@ public final class PrefMgr {
 
     // Supabase
     public static final String SUPABASE_TOKEN = "supabaseToken";
+    public static final String SUPABASE_REFRESH_TOKEN = "supabaseRefreshToken";
     public static final String SUPABASE_USER_ID = "supabaseUserId";
     public static final String SUPABASE_EMAIL = "supabaseEmail";
+    public static final String LAST_REMOTE_POWER_COMMAND_ID = "lastRemotePowerCommandId";
+    public static final String TEACHER_MODE = "teacherMode";
+    public static final String WISHLIST_ERROR_PREFIX = "wishlistError.";
+
+    // Wallpaper
+    public static final String WALLPAPER_URL = "wallpaperUrl";
 
     public static Set<String> getHideFilePath() {
         // Return a defensive copy to avoid SharedPreferences caching issues
@@ -447,6 +454,16 @@ public final class PrefMgr {
     }
 
     @Nullable
+    public static String getSupabaseRefreshToken() {
+        return mPrefs.getString(SUPABASE_REFRESH_TOKEN, null);
+    }
+
+    public static void setSupabaseRefreshToken(String refreshToken) {
+        mPrefEditor.putString(SUPABASE_REFRESH_TOKEN, refreshToken);
+        mPrefEditor.apply();
+    }
+
+    @Nullable
     public static String getSupabaseUserId() {
         return mPrefs.getString(SUPABASE_USER_ID, null);
     }
@@ -463,6 +480,39 @@ public final class PrefMgr {
 
     public static void setSupabaseEmail(String email) {
         mPrefEditor.putString(SUPABASE_EMAIL, email);
+        mPrefEditor.apply();
+    }
+
+    @Nullable
+    public static String getLastRemotePowerCommandId() {
+        return mPrefs.getString(LAST_REMOTE_POWER_COMMAND_ID, null);
+    }
+
+    public static void setLastRemotePowerCommandId(String commandId) {
+        mPrefEditor.putString(LAST_REMOTE_POWER_COMMAND_ID, commandId);
+        mPrefEditor.apply();
+    }
+
+    public static boolean isTeacherMode() {
+        return mPrefs.getBoolean(TEACHER_MODE, false);
+    }
+
+    public static void setTeacherMode(boolean enabled) {
+        mPrefEditor.putBoolean(TEACHER_MODE, enabled);
+        mPrefEditor.apply();
+    }
+
+    public static String getWishlistError(String packageName) {
+        return mPrefs.getString(WISHLIST_ERROR_PREFIX + packageName, "");
+    }
+
+    public static void setWishlistError(String packageName, String error) {
+        mPrefEditor.putString(WISHLIST_ERROR_PREFIX + packageName, error);
+        mPrefEditor.apply();
+    }
+
+    public static void clearWishlistError(String packageName) {
+        mPrefEditor.remove(WISHLIST_ERROR_PREFIX + packageName);
         mPrefEditor.apply();
     }
 
@@ -491,5 +541,38 @@ public final class PrefMgr {
                 }
             });
         }
+    }
+
+    // Wallpaper
+    @Nullable
+    public static String getWallpaperUrl() {
+        return mPrefs.getString(WALLPAPER_URL, null);
+    }
+
+    public static void setWallpaperUrl(@Nullable String url) {
+        if (url == null) {
+            mPrefEditor.remove(WALLPAPER_URL);
+        } else {
+            mPrefEditor.putString(WALLPAPER_URL, url);
+        }
+        mPrefEditor.apply();
+    }
+
+    // Device-specific app installation status (per tablet)
+    private static final String DEVICE_INSTALLED_APPS = "deviceInstalledApps";
+
+    /**
+     * Obtém lista local de apps que foram instalados neste dispositivo específico
+     */
+    public static Set<String> getDeviceInstalledApps() {
+        return new HashSet<>(mPrefs.getStringSet(DEVICE_INSTALLED_APPS, new HashSet<>()));
+    }
+
+    /**
+     * Atualiza lista local de apps instalados neste dispositivo
+     */
+    public static void setDeviceInstalledApps(Set<String> apps) {
+        mPrefEditor.putStringSet(DEVICE_INSTALLED_APPS, apps);
+        mPrefEditor.apply();
     }
 }

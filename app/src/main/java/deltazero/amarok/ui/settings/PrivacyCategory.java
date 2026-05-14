@@ -13,8 +13,6 @@ import deltazero.amarok.PrefMgr;
 import deltazero.amarok.ui.FirewallActivity;
 import deltazero.amarok.R;
 import deltazero.amarok.ui.CountdownConfirmDialog;
-import deltazero.amarok.ui.SetPasswordFragment;
-import deltazero.amarok.utils.HashUtil;
 import deltazero.amarok.utils.LauncherIconController;
 import deltazero.amarok.utils.SecurityUtil;
 import rikka.material.preference.MaterialSwitchPreference;
@@ -32,22 +30,7 @@ public class PrivacyCategory extends BaseCategory {
         appLockPref.setIcon(R.drawable.lock_black_24dp);
         appLockPref.setSummary(R.string.app_lock_description);
         appLockPref.setChecked(PrefMgr.getAmarokPassword() != null);
-        appLockPref.setOnPreferenceClickListener(preference -> {
-            if (appLockPref.isChecked()) {
-                new SetPasswordFragment()
-                        .setCallback(password -> {
-                            PrefMgr.setAmarokPassword(password == null ? null : HashUtil.calculateHash(password));
-                            SecurityUtil.unlock(); /* Avoid password right after enable the app lock */
-                            appLockPref.setChecked(password != null);
-                            biometricPref.setEnabled(PrefMgr.getAmarokPassword() != null);
-                        })
-                        .show(activity.getSupportFragmentManager(), null);
-            } else {
-                PrefMgr.setAmarokPassword(null);
-                biometricPref.setEnabled(PrefMgr.getAmarokPassword() != null);
-            }
-            return false;
-        });
+        appLockPref.setEnabled(false); // Read-only, password is managed through Supabase login
         addPreference(appLockPref);
 
         biometricPref = new MaterialSwitchPreference(activity);

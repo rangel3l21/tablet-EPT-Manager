@@ -8,22 +8,31 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
+
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.materialswitch.MaterialSwitch;
 import com.google.android.material.progressindicator.CircularProgressIndicator;
+import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 import com.hjq.permissions.XXPermissions;
 
 import deltazero.amarok.AmarokActivity;
 import deltazero.amarok.Hider;
 import deltazero.amarok.PrefMgr;
 import deltazero.amarok.R;
+import deltazero.amarok.RemotePowerManager;
+import deltazero.amarok.RemotePowerService;
 import deltazero.amarok.apphider.NoneAppHider;
 import deltazero.amarok.filehider.NoneFileHider;
+import deltazero.amarok.network.FirewallVpnService;
 import deltazero.amarok.ui.settings.SettingsActivity;
 import deltazero.amarok.ui.settings.SwitchAppHiderActivity;
 import deltazero.amarok.ui.settings.SwitchFileHiderActivity;
+import deltazero.amarok.utils.HashUtil;
 import deltazero.amarok.utils.PermissionUtil;
-import deltazero.amarok.utils.UpdateUtil;
+import deltazero.amarok.utils.ServerUpdateManager;
 import nl.dionsegijn.konfetti.xml.KonfettiView;
 import android.provider.Settings;
 import android.content.ComponentName;
@@ -36,8 +45,10 @@ public class MainActivity extends AmarokActivity {
     private ImageView ivStatusImg;
     private TextView tvStatusInfo, tvStatus, tvMoto;
     private MaterialButton btChangeStatus, btSetHideFiles, btSetHideApps;
+    private MaterialSwitch swTeacherMode;
     private CircularProgressIndicator piProcessStatus;
     private KonfettiView konfettiView;
+    private boolean updatingTeacherSwitch;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,8 +64,20 @@ public class MainActivity extends AmarokActivity {
         btChangeStatus = findViewById(R.id.main_bt_change_status);
         btSetHideApps = findViewById(R.id.main_bt_set_hide_apps);
         btSetHideFiles = findViewById(R.id.main_bt_set_hide_files);
+        swTeacherMode = findViewById(R.id.main_sw_teacher_mode);
         piProcessStatus = findViewById(R.id.main_pi_process_status);
         konfettiView = findViewById(R.id.main_konfetti_view);
+
+        swTeacherMode.setChecked(PrefMgr.isTeacherMode());
+        swTeacherMode.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (updatingTeacherSwitch) return;
+
+            updatingTeacherSwitch = true;
+            swTeacherMode.setChecked(!isChecked);
+            updatingTeacherSwitch = false;
+
+            showTeacherModePasswordDialog(isChecked);
+        });
 
         // Init UI
         refreshUi(Hider.getState());
@@ -103,13 +126,82 @@ public class MainActivity extends AmarokActivity {
 
         // Check for updates
         if (PrefMgr.getEnableAutoUpdate()) {
-            UpdateUtil.checkAndNotify(this, true);
+            ServerUpdateManager.checkAndNotify(this, true);
         }
     }
 
     public void changeStatus(View view) {
+        if (PrefMgr.isTeacherMode()) {
+            Toast.makeText(this, "Modo professor ativo: este aparelho nao sera bloqueado.", Toast.LENGTH_LONG).show();
+            return;
+        }
+
         if (Hider.getState() == Hider.State.HIDDEN) Hider.unhide(this);
         else Hider.hide(this);
+    }
+
+    private void setTeacherMode(boolean enabled) {
+        PrefMgr.setTeacherMode(enabled);
+
+        updatingTeacherSwitch = true;
+        swTeacherMode.setChecked(enabled);
+        updatingTeacherSwitch = false;
+
+        if (enabled) {
+            PrefMgr.setFirewallEnabled(false);
+            Intent svcIntent = new Intent(this, FirewallVpnService.class);
+            svcIntent.setAction(FirewallVpnService.ACTION_STOP);
+            startService(svcIntent);
+
+            if (Hider.getState() == Hider.State.HIDDEN) {
+                Hider.unhide(this);
+            }
+
+            Toast.makeText(this,
+                    "Modo professor ativo neste aparelho. Ele so gerencia os tablets.",
+                    Toast.LENGTH_LONG).show();
+        } else {
+            Toast.makeText(this,
+                    "Modo professor desativado. Este aparelho volta a receber as acoes.",
+                    Toast.LENGTH_LONG).show();
+        }
+
+        refreshUi(Hider.getState());
+    }
+
+    private void showTeacherModePasswordDialog(boolean enabled) {
+        String savedPassword = PrefMgr.getAmarokPassword();
+        if (savedPassword == null) {
+            Toast.makeText(this, "Faca login novamente para definir a senha admin.", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_security, null);
+        TextInputLayout tilPassword = dialogView.findViewById(R.id.security_dialog_til_password_input);
+        TextInputEditText etPassword = dialogView.findViewById(R.id.security_dialog_et_password_input);
+        MaterialButton btCancel = dialogView.findViewById(R.id.security_dialog_bt_cancel);
+        MaterialButton btUnlock = dialogView.findViewById(R.id.security_dialog_bt_unlock);
+
+        AlertDialog dialog = new MaterialAlertDialogBuilder(this)
+                .setView(dialogView)
+                .create();
+
+        btCancel.setOnClickListener(v -> dialog.dismiss());
+        btUnlock.setOnClickListener(v -> {
+            String typedPassword = etPassword.getText() == null ? "" : etPassword.getText().toString().trim();
+            String typedHash = HashUtil.calculateHash(typedPassword);
+            if (!typedHash.equals(savedPassword)) {
+                tilPassword.setError("Senha incorreta");
+                return;
+            }
+
+            tilPassword.setError(null);
+            dialog.dismiss();
+            setTeacherMode(enabled);
+        });
+
+        dialog.setOnShowListener(d -> etPassword.requestFocus());
+        dialog.show();
     }
 
     public void setHideApps(View view) {
@@ -151,6 +243,35 @@ public class MainActivity extends AmarokActivity {
 
     public void openWishlist(View view) {
         startActivity(new Intent(this, WishlistActivity.class));
+    }
+
+    public void powerOffConnectedDevices(View view) {
+        if (PrefMgr.getSupabaseToken() == null) {
+            Toast.makeText(this, "Voce precisa estar logado para enviar comandos.", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("Desligar tablets conectados")
+                .setMessage("Os tablets logados nesta conta vao tentar desligar nos proximos 5 minutos. Depois disso o comando expira.")
+                .setPositiveButton("Enviar comando", (dialog, which) -> {
+                    RemotePowerManager.sendPowerOffCommand(new RemotePowerManager.CommandCallback() {
+                        @Override
+                        public void onSuccess() {
+                            runOnUiThread(() -> {
+                                RemotePowerService.startService(MainActivity.this);
+                                Toast.makeText(MainActivity.this, "Comando enviado por 5 minutos.", Toast.LENGTH_LONG).show();
+                            });
+                        }
+
+                        @Override
+                        public void onError(String error) {
+                            runOnUiThread(() -> Toast.makeText(MainActivity.this, "Erro: " + error, Toast.LENGTH_LONG).show());
+                        }
+                    });
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .show();
     }
 
     public void setHideFile(View view) {
@@ -204,6 +325,12 @@ public class MainActivity extends AmarokActivity {
                 piProcessStatus.show();
                 btChangeStatus.setEnabled(false);
             }
+        }
+
+        if (PrefMgr.isTeacherMode()) {
+            btChangeStatus.setEnabled(false);
+            tvStatus.setText("Modo Professor");
+            tvStatusInfo.setText("Este aparelho gerencia os tablets, mas nao recebe bloqueios locais.");
         }
     }
 

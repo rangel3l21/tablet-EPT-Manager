@@ -23,6 +23,15 @@ public class InstallReceiver extends BroadcastReceiver {
             
             if (status == PackageInstaller.STATUS_SUCCESS) {
                 AppInstallManager.getInstance(context).onInstallComplete(packageName, true, message);
+            } else if (status == PackageInstaller.STATUS_PENDING_USER_ACTION) {
+                Intent confirmationIntent = intent.getParcelableExtra(Intent.EXTRA_INTENT);
+                if (confirmationIntent != null) {
+                    confirmationIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    context.startActivity(confirmationIntent);
+                } else {
+                    AppInstallManager.getInstance(context).onInstallComplete(
+                            packageName, false, "Confirmacao de instalacao nao recebida.");
+                }
             } else {
                 AppInstallManager.getInstance(context).onInstallComplete(packageName, false, message);
             }

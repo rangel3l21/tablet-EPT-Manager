@@ -1,0 +1,17 @@
+{
+  "version": "0.10.1+fd95cb3",
+  "versionCode": 124,
+  "appName": "Amarok",
+  "packageName": "deltazero.amarok.foss",
+  "flavor": "foss",
+  "buildType": "debug",
+  "buildTime": "2026-05-14T08:37:17.904557",
+  "commit": "fd95cb3",
+  "commitTag": null,
+  "releaseFile": "Amarok-v0.10.1+fd95cb3-foss.apk",
+  "fileSize": 10368309,
+  "fileSizeHuman": "9.89 MB",
+  "sha256": "6b0c963644fe00496ef7888a017ee36bf60af301d4122b6ce6188b9d7a1c4aa0",
+  "downloadUrl": "https://github.com/deltazefiro/Amarok-Hider/releases/download/latest/Amarok-v0.10.1+fd95cb3-foss.apk",
+  "changelog": "Debug build with automatic release metadata generation"
+}

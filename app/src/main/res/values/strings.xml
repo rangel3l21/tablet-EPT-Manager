@@ -140,10 +140,6 @@
     <string name="password_incorrect">Senha incorreta.</string>
     <string name="app_lock">Bloqueio de app</string>
     <string name="app_lock_description">Requerer senha para acessar o Amarok.</string>
-    <string name="confirm_password">Confirme a senha</string>
-    <string name="set_password">Definir senha</string>
-    <string name="password_length_error">A senha deve ter entre 3 e 15 caracteres.</string>
-    <string name="password_mismatch_error">As senhas não coincidem.</string>
     <string name="biometric_auth">Autenticação biométrica</string>
     <string name="biometric_auth_description">Utilize a autenticação biométrica do dispositivo para acessar o Amarok, quando disponível.</string>
     <string name="dhizuku_permission_denied">Dhizuku: Permissão negada</string>
@@ -230,4 +226,17 @@
     <string name="hide_amarok_icon_dialog_title">Ocultar ícone do Amarok</string>
     <string name="hide_amarok_icon_dialog_message">Esta opção ocultará o Amarok do iniciador. Você pode discar *#*#262765#*#* (262765 soletra \"amarok\" no teclado T9) para acessar o Amarok novamente.</string>
     <string name="accessibility_service_description">Monitora o início de aplicativos bloqueados pelo Amarok para solicitar a senha de acesso.</string>
+
+    <!-- Wallpaper -->
+    <string name="wallpaper">Papel de parede</string>
+    <string name="set_default_wallpaper">Papel de parede padrão</string>
+    <string name="set_default_wallpaper_description">Aplicar papel de parede padrão (https://i.ibb.co/wh8h9bry/imgbg.jpg)</string>
+    <string name="custom_wallpaper_url">URL do papel de parede personalizado</string>
+    <string name="custom_wallpaper_url_description">Digite a URL de um papel de parede personalizado</string>
+    <string name="apply_current_wallpaper">Aplicar papel de parede atual</string>
+    <string name="apply_current_wallpaper_description">Reaplica o papel de parede selecionado</string>
+    <string name="clear_wallpaper_cache">Limpar cache de papéis de parede</string>
+    <string name="clear_wallpaper_cache_description">Limpa os papéis de parede em cache localmente</string>
+    <string name="clear_wallpaper_cache_confirm">Todos os papéis de parede em cache serão deletados. Tem certeza?</string>
+    <string name="clear_cache">Limpar cache</string>
 </resources>

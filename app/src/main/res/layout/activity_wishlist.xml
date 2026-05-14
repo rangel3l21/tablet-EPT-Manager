@@ -6,23 +6,21 @@
     android:orientation="vertical"
     android:background="?android:attr/colorBackground">
 
+    <!-- Toolbar -->
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:elevation="4dp">
+
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/wishlist_toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            app:title="Baixar Aplicativos" />
+            app:title="Lista de Apps para Baixar" />
+
     </com.google.android.material.appbar.AppBarLayout>
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btn_process_queue"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        android:text="Processar Fila de Downloads" />
-
+    <!-- Barra de carregamento -->
     <com.google.android.material.progressindicator.LinearProgressIndicator
         android:id="@+id/pi_loading"
         android:layout_width="match_parent"
@@ -30,10 +28,51 @@
         android:indeterminate="true"
         android:visibility="gone" />
 
+    <!-- Botão Adicionar App -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_add_app"
+        style="@style/Widget.Material3.Button.TonalButton.Icon"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="4dp"
+        android:text="+ Adicionar App à Lista"
+        app:icon="@drawable/ic_app"
+        app:iconGravity="textStart" />
+
+    <!-- Texto quando lista vazia -->
+    <TextView
+        android:id="@+id/tv_empty"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:text="Nenhum app na lista.\nClique em '+ Adicionar App' para começar."
+        android:textAlignment="center"
+        android:textColor="?android:attr/textColorSecondary"
+        android:visibility="gone" />
+
+    <!-- Lista de apps -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv_wishlist"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:paddingHorizontal="16dp" />
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:paddingHorizontal="16dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="80dp"
+        android:clipToPadding="false" />
+
+    <!-- Botão Baixar Agora (fixo na parte inferior) -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_process_queue"
+        style="@style/Widget.Material3.Button.Icon"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:text="Baixar Agora"
+        app:icon="@drawable/ic_download"
+        app:iconGravity="textStart" />
 
 </LinearLayout>

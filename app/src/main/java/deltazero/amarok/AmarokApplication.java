@@ -46,6 +46,11 @@ public class AmarokApplication extends Application {
         // Start PanicButton service
         QuickHideService.startService(this);
 
+        // Keep listening for short-lived school control commands.
+        if (PrefMgr.getSupabaseToken() != null) {
+            RemotePowerService.startService(this);
+        }
+
         // Start App-center
         AppCenterUtil.startAppCenter(this);
 

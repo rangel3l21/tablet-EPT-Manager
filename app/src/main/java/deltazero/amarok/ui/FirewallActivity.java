@@ -57,6 +57,12 @@ public class FirewallActivity extends AppCompatActivity {
         // Firewall switch
         switchFirewall.setChecked(PrefMgr.getFirewallEnabled());
         switchFirewall.setOnCheckedChangeListener((btn, isChecked) -> {
+            if (PrefMgr.isTeacherMode() && isChecked) {
+                switchFirewall.setChecked(false);
+                Toast.makeText(this, "Modo professor ativo: este aparelho nao ativa bloqueio de sites.", Toast.LENGTH_LONG).show();
+                return;
+            }
+
             if (isChecked) {
                 Intent vpnIntent = android.net.VpnService.prepare(this);
                 if (vpnIntent != null) {
@@ -113,6 +119,13 @@ public class FirewallActivity extends AppCompatActivity {
     }
 
     private void startVpnService() {
+        if (PrefMgr.isTeacherMode()) {
+            PrefMgr.setFirewallEnabled(false);
+            switchFirewall.setChecked(false);
+            Toast.makeText(this, "Modo professor ativo: este aparelho nao ativa bloqueio de sites.", Toast.LENGTH_LONG).show();
+            return;
+        }
+
         PrefMgr.setFirewallEnabled(true);
         Intent svcIntent = new Intent(this, FirewallVpnService.class);
         svcIntent.setAction(FirewallVpnService.ACTION_START);

@@ -24,6 +24,10 @@ public class AppLockAccessibilityService extends AccessibilityService {
         unlockedPackages.add(packageName);
     }
 
+    public static void lockPackage(String packageName) {
+        unlockedPackages.remove(packageName);
+    }
+
     @Override
     protected void onServiceConnected() {
         super.onServiceConnected();
@@ -35,6 +39,7 @@ public class AppLockAccessibilityService extends AccessibilityService {
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
         if (event.getEventType() != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return;
+        if (PrefMgr.isTeacherMode()) return;
 
         CharSequence packageNameSequence = event.getPackageName();
         if (packageNameSequence == null) return;

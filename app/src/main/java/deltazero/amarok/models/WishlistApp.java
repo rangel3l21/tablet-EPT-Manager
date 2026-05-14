@@ -11,10 +11,12 @@ public class WishlistApp {
     public String packageName;
     public String status;
     public String errorMessage;
+    public boolean selected; // checkbox — marcado por padrão
 
     public WishlistApp(String packageName) {
         this.packageName = packageName;
         this.status = STATUS_PENDING;
         this.errorMessage = "";
+        this.selected = true;
     }
 }

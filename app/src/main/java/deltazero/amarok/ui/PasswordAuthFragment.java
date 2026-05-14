@@ -72,7 +72,8 @@ public class PasswordAuthFragment extends BottomSheetDialogFragment {
         String password = PrefMgr.getAmarokPassword();
         assert etPassword.getText() != null;
 
-        if (password == null || HashUtil.calculateHash(etPassword.getText().toString()).equals(password)) {
+        String input = etPassword.getText().toString().trim();
+        if (password != null && HashUtil.calculateHash(input).equals(password)) {
             if (onVerifiedCallback != null) onVerifiedCallback.onVerified(true);
             dismiss();
         } else {
