@@ -102,7 +102,7 @@ def generate_metadata(apk_path, releases_dir):
     
     metadata = {
         "version": version,
-        "versionCode": 124,
+        "versionCode": 125,
         "appName": "Amarok",
         "packageName": "deltazero.amarok.foss",
         "flavor": "foss",
