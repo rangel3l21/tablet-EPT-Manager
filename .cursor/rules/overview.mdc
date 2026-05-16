@@ -113,7 +113,13 @@ Provides multiple triggers for instant hide/unhide operations:
 
 **UI:** `app/src/main/java/deltazero/amarok/ui/WishlistActivity.java` manages the "Baixar Aplicativos" wishlist and queue.
 
-### 8. Remote Power Commands
+### 8. OTA Updates
+
+- `ServerUpdateManager.java`: checks `releases/latest.json` from the public GitHub raw endpoint, compares `versionCode`, downloads the matching APK, validates it against `releases/sha256.txt`, and launches Android's package installer through `FileProvider`.
+- `app/src/main/res/xml/file_paths.xml`: exposes the app external files directory for the verified `update.apk`.
+- Update UI entry: `UpdateCategory.java` triggers the manual check; `MainActivity.java` runs the silent startup check when auto-update is enabled.
+
+### 9. Remote Power Commands
 
 - `RemotePowerManager.java`: sends short-lived Supabase power commands and executes received commands once per device.
 - `RemotePowerService.java`: foreground polling service that checks for active commands every 30 seconds.
