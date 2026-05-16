@@ -17,6 +17,10 @@ import sys
 from pathlib import Path
 from datetime import datetime
 
+REPOSITORY_OWNER = "rangel3l21"
+REPOSITORY_NAME = "tablet-EPT-Manager"
+RELEASE_BRANCH = "main"
+
 # Força encoding UTF-8 em Windows
 if sys.platform == "win32":
     import io
@@ -128,7 +132,7 @@ def generate_metadata(apk_path, releases_dir):
         "fileSize": file_size,
         "fileSizeHuman": format_bytes(file_size),
         "sha256": sha256_hash,
-        "downloadUrl": f"https://github.com/deltazefiro/Amarok-Hider/releases/download/{tag or 'latest'}/{apk_name}",
+        "downloadUrl": f"https://raw.githubusercontent.com/{REPOSITORY_OWNER}/{REPOSITORY_NAME}/{RELEASE_BRANCH}/releases/{apk_name}",
         "changelog": "Debug build with automatic release metadata generation"
     }
     

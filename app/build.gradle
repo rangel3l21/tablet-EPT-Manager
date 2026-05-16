@@ -38,7 +38,7 @@ android {
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField "String", "GITHUB_CHECK_UPDATE_URL", '"https://api.github.com/repos/deltazefiro/Amarok-Hider/releases"'
+        buildConfigField "String", "GITHUB_CHECK_UPDATE_URL", '"https://api.github.com/repos/rangel3l21/tablet-EPT-Manager/releases"'
     }
 
     if (project.hasProperty("RELEASE_STORE_FILE")) {
