@@ -2,6 +2,8 @@ plugins {
     id 'com.android.application'
 }
 
+import groovy.json.JsonSlurper
+
 def getGitHash = { ->
     def stdout = new ByteArrayOutputStream()
     exec {
@@ -11,13 +13,27 @@ def getGitHash = { ->
     return stdout.toString().trim()
 }
 
+def getNextVersionCode = { ->
+    if (project.hasProperty("VERSION_CODE")) {
+        return project.property("VERSION_CODE").toString().toInteger()
+    }
+
+    def latestJson = rootProject.file("releases/latest.json")
+    if (!latestJson.exists()) {
+        return 1
+    }
+
+    def latest = new JsonSlurper().parse(latestJson)
+    return (latest.versionCode as Integer) + 1
+}
+
 android {
     defaultConfig {
         applicationId "deltazero.amarok"
         minSdkVersion 26
         targetSdkVersion 36
         compileSdk = 36
-        versionCode 126
+        versionCode getNextVersionCode()
         versionName "0.10.2"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"

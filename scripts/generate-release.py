@@ -14,7 +14,6 @@ import json
 import subprocess
 import hashlib
 import sys
-import re
 from pathlib import Path
 from datetime import datetime
 
@@ -84,14 +83,18 @@ def get_git_tag():
         return None
 
 
-def get_version_code():
-    """Read Android versionCode from app/build.gradle."""
-    build_gradle = Path("app/build.gradle")
-    content = build_gradle.read_text(encoding="utf-8")
-    match = re.search(r"versionCode\s+(\d+)", content)
-    if not match:
-        raise ValueError("versionCode not found in app/build.gradle")
-    return int(match.group(1))
+def get_version_code(apk_path):
+    """Read Android versionCode from Gradle output metadata."""
+    metadata_path = apk_path.parent / "output-metadata.json"
+    if not metadata_path.exists():
+        raise FileNotFoundError(f"Output metadata not found: {metadata_path}")
+
+    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    for element in metadata.get("elements", []):
+        if element.get("outputFile") == apk_path.name:
+            return int(element["versionCode"])
+
+    raise ValueError(f"versionCode not found for {apk_path.name} in {metadata_path}")
 
 
 def create_releases_dir():
@@ -113,7 +116,7 @@ def generate_metadata(apk_path, releases_dir):
     
     metadata = {
         "version": version,
-        "versionCode": get_version_code(),
+        "versionCode": get_version_code(apk_path),
         "appName": "Amarok",
         "packageName": "deltazero.amarok.foss",
         "flavor": "foss",

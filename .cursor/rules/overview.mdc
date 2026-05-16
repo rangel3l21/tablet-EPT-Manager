@@ -117,6 +117,7 @@ Provides multiple triggers for instant hide/unhide operations:
 
 - `ServerUpdateManager.java`: checks `releases/latest.json` from the public GitHub raw endpoint, compares `versionCode`, downloads the matching APK, validates it against `releases/sha256.txt`, and launches Android's package installer through `FileProvider`.
 - `app/src/main/res/xml/file_paths.xml`: exposes the app external files directory for the verified `update.apk`.
+- `app/build.gradle`: derives the next APK `versionCode` from `releases/latest.json` (`latest + 1`) so OTA releases are incremented automatically.
 - Update UI entry: `UpdateCategory.java` triggers the manual check; `MainActivity.java` runs the silent startup check when auto-update is enabled.
 
 ### 9. Remote Power Commands
