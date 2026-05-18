@@ -1,1 +1,1 @@
-a6fadba609eac260d782ffe3a1fb94eb21bf7a4290c99094f80ad85b6991aa0d  Amarok-v0.10.2+d9f6992-foss.apk
+2f2cdd1b5be526e794b6587bbf13c11050a6cbafb2971c6259e790f5da5125f1  Amarok-v0.10.2+eca7410-foss.apk
