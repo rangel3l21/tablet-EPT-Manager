@@ -127,3 +127,7 @@ Provides multiple triggers for instant hide/unhide operations:
 - `receivers/BootReceiver.java`: restarts the polling service after boot when the user is logged in.
 - `SupabaseClient.java`: reads/writes the `remote_power_commands` table. Commands expire after 5 minutes and are ignored after execution.
 - Teacher mode (`PrefMgr.isTeacherMode()` and the "Sou Professor" switch in `MainActivity`) turns the current device into a controller only: it can edit cloud lists and send commands, but ignores local hiding, firewall activation, app install queue, app lock, and received power commands.
+
+### 10. Device Owner Provisioning
+
+- `receivers/AdminReceiver.java`: receives device/profile owner provisioning callbacks, reads camera policy flags from `EXTRA_PROVISIONING_ADMIN_EXTRAS_BUNDLE`, persists the resulting camera policy in `amarok_policy`, and applies it through `DevicePolicyManager`.
